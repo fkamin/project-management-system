@@ -1,2 +1,1 @@
-# project-management-system
-System zarządzania projektami
+# System zarządzania projektami
