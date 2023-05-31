@@ -16,20 +16,18 @@ class TaskController(
     private val projectService: ProjectService) {
 
     @GetMapping("/admin/tasks")
-    fun getAllTasksByAdmin(): List<TaskDto> {
-        return taskService.findAllTasks().map { task -> task.toDto()}
-    }
+    fun getAllTasksByAdmin(): List<TaskDto> = taskService.findAllTasks().map { task -> task.toDto() }
+
 
     @GetMapping("/{projectId}/tasks/{taskId}")
     fun getTaskFromProject(authentication: Authentication, @PathVariable projectId: String, @PathVariable taskId: String): TaskDto {
         val authUser = authentication.toUser()
 
         val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) {
-            throw ApiException(403, "To nie twój projekt")
-        }
+        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
 
-        return taskService.findTaskByIdAndProjectId(taskId, projectId).toDto()
+        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
+        return task.toDto()
     }
 
     @GetMapping("/{projectId}/tasks")
@@ -37,9 +35,7 @@ class TaskController(
         val authUser = authentication.toUser()
 
         val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) {
-            throw ApiException(403, "To nie twój projekt")
-        }
+        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
 
         return taskService.findTasksByProjectId(projectId).map { task -> task.toDto() }
     }
@@ -52,9 +48,7 @@ class TaskController(
         val authUser = authentication.toUser()
 
         val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) {
-            throw ApiException(403, "To nie twój projekt")
-        }
+        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
 
         val task = Task(
             title = payload.title,

@@ -1,8 +1,6 @@
 package home.projectmanagementsystem.dtos
 
 import home.projectmanagementsystem.models.Category
-import home.projectmanagementsystem.models.Task
-import home.projectmanagementsystem.models.User
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 

@@ -1,8 +1,6 @@
 package home.projectmanagementsystem.dtos
 
 import home.projectmanagementsystem.models.Category
-import home.projectmanagementsystem.models.Task
-import home.projectmanagementsystem.models.User
 import java.util.Date
 
 data class LoginDto(
@@ -31,11 +29,6 @@ data class UpdateTaskDto(
     val deadline: Date,
     val state: String,
     val categories: MutableList<Category>
-)
-
-data class DeleteTaskDto(
-    var taskId: String,
-    var projectId: String
 )
 
 data class CreateCategoryDto(

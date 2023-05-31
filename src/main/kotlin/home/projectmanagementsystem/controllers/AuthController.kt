@@ -8,7 +8,6 @@ import home.projectmanagementsystem.services.HashService
 import home.projectmanagementsystem.services.TokenService
 import home.projectmanagementsystem.models.User
 import home.projectmanagementsystem.services.UserService
-import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping

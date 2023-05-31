@@ -1,6 +1,5 @@
 package home.projectmanagementsystem.controllers
 
-import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.Category
 import home.projectmanagementsystem.services.CategoryService
@@ -13,9 +12,7 @@ import org.springframework.web.bind.annotation.*
 class CategoryController(private val categoryService: CategoryService) {
 
     @GetMapping
-    fun getAllCategories(): List<CategoryDto> {
-        return categoryService.getAllCategories().map { category -> category.toDto() }
-    }
+    fun getAllCategories(): List<CategoryDto> = categoryService.getAllCategories().map { category -> category.toDto() }
 
     @PostMapping
     fun createCategory(@RequestBody payload: CreateCategoryDto): ResponseEntity<String> {
@@ -34,9 +31,7 @@ class CategoryController(private val categoryService: CategoryService) {
         val category = categoryService.findById(payload.id) ?: throw ApiException(404, "Kategoria nie została znaleziona")
 
         val existingCategory = categoryService.findByNameAndId(payload.name, payload.id)
-        if ((existingCategory != null) && (existingCategory.id != payload.id)) {
-            throw ApiException(409, "Kategoria już istnieje")
-        }
+        if ((existingCategory != null) && (existingCategory.id != payload.id)) throw ApiException(409, "Kategoria już istnieje")
 
         category.name = payload.name
         category.description = payload.description

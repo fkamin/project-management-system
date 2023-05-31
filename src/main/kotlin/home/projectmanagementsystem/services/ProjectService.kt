@@ -3,29 +3,18 @@ package home.projectmanagementsystem.services
 import home.projectmanagementsystem.dtos.ApiException
 import home.projectmanagementsystem.models.Project
 import home.projectmanagementsystem.repositories.ProjectRepository
-import home.projectmanagementsystem.repositories.TaskRepository
 import org.springframework.stereotype.Service
 
 @Service
-class ProjectService(
-    private val projectRepository: ProjectRepository,
-    private val taskRepository: TaskRepository) {
+class ProjectService(private val projectRepository: ProjectRepository) {
 
-    fun findProjectById(id: String): Project {
-        return projectRepository.findProjectById(id)
-    }
+    fun findProjectById(id: String): Project? = projectRepository.findProjectById(id)
 
-    fun findProjectByUserId(userId: String?): Project {
-        return projectRepository.findProjectByUserId(userId)
-    }
+    fun findProjectByIdAndUserId(projectId: String, userId: String?): Project? = projectRepository.findProjectByIdAndUserId(projectId, userId)
 
-    fun findProjectsByUserId(userId: String?): MutableList<Project> {
-        return projectRepository.findProjectsByUserId(userId)
-    }
+    fun findProjectsByUserId(userId: String?): MutableList<Project> = projectRepository.findProjectsByUserId(userId)
 
-    fun save(project: Project): Project {
-        return projectRepository.save(project)
-    }
+    fun save(project: Project): Project = projectRepository.save(project)
 
     fun updateTaskInProject(projectId: String, oldTaskId: String, newTaskId: String) {
         val project = findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
@@ -33,18 +22,16 @@ class ProjectService(
         save(project)
     }
 
-    fun delete(project: Project) {
-        projectRepository.delete(project)
-    }
+    fun delete(project: Project) = projectRepository.delete(project)
 
     fun deleteTaskFromProject(projectId: String, taskId: String) {
-        val project = findProjectById(projectId)
+        val project = findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
         project.taskList.remove(taskId)
         save(project)
     }
 
     fun deleteTasksFromProject(projectId: String) {
-        val project = findProjectById(projectId)
+        val project = findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
         project.taskList.clear()
         save(project)
     }

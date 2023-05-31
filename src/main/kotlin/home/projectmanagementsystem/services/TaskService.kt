@@ -12,11 +12,11 @@ class TaskService(
     private val taskRepository: TaskRepository,
     private val projectRepository: ProjectRepository) {
 
-    fun findTaskById(taskId: String): Task {
+    fun findTaskById(taskId: String): Task? {
         return taskRepository.findTaskById(taskId)
     }
 
-    fun findTaskByIdAndProjectId(taskId: String, projectId: String): Task {
+    fun findTaskByIdAndProjectId(taskId: String, projectId: String): Task? {
         return taskRepository.findTaskByIdAndProjectId(taskId, projectId)
     }
 

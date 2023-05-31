@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(private val userService: UserService) {
 
     @GetMapping
-    fun getAllUsers(): List<User> {
-        return userService.getAllUsers()
-    }
+    fun getAllUsers(): List<User> = userService.getAllUsers()
 
 }
