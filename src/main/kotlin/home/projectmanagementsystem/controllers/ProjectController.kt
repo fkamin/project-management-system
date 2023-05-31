@@ -19,7 +19,7 @@ class ProjectController(
     fun getProject(authentication: Authentication, @PathVariable projectId: String): ProjectDto {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectByIdAndUserId(authUser.id) ?: throw ApiException(404, "Projekt nie znaleziony")
+        val project = projectService.findProjectByIdAndUserId(projectId, authUser.id) ?: throw ApiException(404, "Projekt nie znaleziony")
 
         return project.toDto()
     }
