@@ -9,15 +9,13 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
+// TODO dorobic usuwanie z bazy (moze kaskadowe) komentarzy w przypadku usuwania taska lub taskow
+
 @RestController
 @RequestMapping("/api/projects")
 class TaskController(
     private val taskService: TaskService,
     private val projectService: ProjectService) {
-
-    @GetMapping("/admin/tasks")
-    fun getAllTasksByAdmin(): List<TaskDto> = taskService.findAllTasks().map { task -> task.toDto() }
-
 
     @GetMapping("/{projectId}/tasks/{taskId}")
     fun getTaskFromProject(authentication: Authentication, @PathVariable projectId: String, @PathVariable taskId: String): TaskDto {

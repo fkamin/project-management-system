@@ -9,6 +9,8 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
+// TODO dorobic usuwanie z bazy (moze kaskadowe) komentarzy w przypadku usuwania projektu lub projektow
+
 @RestController
 @RequestMapping("/api/projects")
 class ProjectController(

@@ -9,7 +9,8 @@ data class Comment(
     @Id
     var id: String? = null,
     var description: String = "",
-    var author: User = User(),
+    var author: String? = null,
+    var taskId: String = "",
     var date: Date = Date(),
-    var taskId: String = ""
+    var wasEdited: Boolean = false
 )

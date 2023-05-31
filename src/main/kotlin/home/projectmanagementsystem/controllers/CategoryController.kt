@@ -26,12 +26,15 @@ class CategoryController(private val categoryService: CategoryService) {
         return ResponseEntity.ok("Pomyślnie dodano kategorie")
     }
 
-    @PutMapping
-    fun updateCategory(authentication: Authentication, @RequestBody payload: UpdateCategoryDto): ResponseEntity<String> {
-        val category = categoryService.findById(payload.id) ?: throw ApiException(404, "Kategoria nie została znaleziona")
+    @PutMapping("/{categoryId}")
+    fun updateCategory(
+        authentication: Authentication,
+        @PathVariable categoryId: String,
+        @RequestBody payload: UpdateCategoryDto): ResponseEntity<String> {
+        val category = categoryService.findById(categoryId) ?: throw ApiException(404, "Kategoria nie została znaleziona")
 
-        val existingCategory = categoryService.findByNameAndId(payload.name, payload.id)
-        if ((existingCategory != null) && (existingCategory.id != payload.id)) throw ApiException(409, "Kategoria już istnieje")
+        val existingCategory = categoryService.findByNameAndId(payload.name, categoryId)
+        if ((existingCategory != null) && (existingCategory.id != categoryId)) throw ApiException(409, "Kategoria już istnieje")
 
         category.name = payload.name
         category.description = payload.description
@@ -40,8 +43,8 @@ class CategoryController(private val categoryService: CategoryService) {
         return ResponseEntity.ok("Pomyślnie zaktualizowano kategorię")
     }
 
-    @DeleteMapping
-    fun deleteCategory(@RequestParam categoryId: String): ResponseEntity<String> {
+    @DeleteMapping("/{categoryId}")
+    fun deleteCategory(@PathVariable categoryId: String): ResponseEntity<String> {
         val category = categoryService.findById(categoryId) ?: throw ApiException(404, "Kategoria nie znaleziona")
 
         categoryService.delete(category)

@@ -1,6 +1,5 @@
 package home.projectmanagementsystem.dtos
 
-import home.projectmanagementsystem.models.Category
 import org.springframework.web.server.ResponseStatusException
 import java.util.*
 
@@ -10,20 +9,10 @@ data class LoginResponseDto(
     val token: String
 )
 
-data class TaskDto(
-    var id: String?,
-    var title: String,
-    var description: String,
-    var deadline: Date,
-    var state: String,
-    var categories: MutableList<Category>,
-    var projectId: String
-)
-
-data class CategoryDto(
-    var id: String?,
-    var name: String,
-    var description: String
+data class UserDto(
+    var firstName: String,
+    var lastName: String,
+    var email: String,
 )
 
 data class ProjectDto(
@@ -35,4 +24,29 @@ data class ProjectDto(
     var endDate: Date,
     var taskList: MutableList<String>,
     var userId: String?
+)
+
+data class TaskDto(
+    var id: String?,
+    var title: String,
+    var description: String,
+    var deadline: Date,
+    var state: String,
+    var categories: MutableList<String>,
+    var projectId: String
+)
+
+data class CategoryDto(
+    var id: String?,
+    var name: String,
+    var description: String
+)
+
+data class CommentDto(
+    var id: String?,
+    var description: String,
+    var date: Date,
+    var author: String?,
+    var taskId: String?,
+    var wasEdited: Boolean
 )

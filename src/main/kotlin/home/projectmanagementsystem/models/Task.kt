@@ -12,6 +12,7 @@ data class Task(
     var description: String = "",
     var deadline: Date = Date(),
     var state: String = "",
-    var categories: MutableList<Category> = mutableListOf(),
+    var categories: MutableList<String> = mutableListOf(),
+    var comments: MutableList<String> = mutableListOf(),
     var projectId: String = ""
 )

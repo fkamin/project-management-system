@@ -39,6 +39,12 @@ class TaskService(
         return projectRepository.save(project)
     }
 
+    fun updateCommentInTask(taskId: String, oldCommentId: String, newCommentId: String) {
+        val task = findTaskById(taskId) ?: throw ApiException(404, "Task nie istnieje")
+        task.comments.map { if (it == oldCommentId) newCommentId else it }
+        save(task)
+    }
+
     fun delete(task: Task) {
         taskRepository.delete(task)
     }
