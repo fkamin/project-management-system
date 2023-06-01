@@ -2,6 +2,10 @@ package home.projectmanagementsystem.controllers
 
 import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
+import home.projectmanagementsystem.models.User
+import home.projectmanagementsystem.services.CommentService
+import home.projectmanagementsystem.services.ProjectService
+import home.projectmanagementsystem.services.TaskService
 import home.projectmanagementsystem.services.UserService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -11,14 +15,17 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/users")
-class UserController(private val userService: UserService) {
+class UserController(
+    private val userService: UserService,
+    private val projectService: ProjectService,
+    private val taskService: TaskService,
+    private val commentService: CommentService) {
 
     @GetMapping("/{userId}")
     fun getUser(authentication: Authentication, @PathVariable userId: String): UserDto {
         val authUser = authentication.toUser()
 
-        val user = userService.findUserById(userId) ?: throw ApiException(404, "User nie istnieje")
-        if (userId != authUser.id) throw ApiException(404, "Nie masz dostępu do tego usera")
+        val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
 
         return user.toDto()
     }
@@ -31,17 +38,16 @@ class UserController(private val userService: UserService) {
     ): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val user = userService.findUserById(userId) ?: throw ApiException(404, "User nie istnieje")
-        if (userId != authUser.id) throw ApiException(404, "Nie masz dostępu do tego usera")
+        val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
 
-        // TODO sprawdzic czy istnieje email w bazie, jezeli tak to nie dodajemy
+        if (userService.existsByEmail(payload.email)) throw ApiException(400, "Email jest zajęty")
 
         user.firstName = payload.firstName
         user.lastName = payload.lastName
         user.email = payload.email
 
         userService.save(user)
-        return ResponseEntity.ok("Pomyślnie zedytowano usera")
+        return ResponseEntity.ok("Pomyślnie zaktualizowano użytkownika")
     }
 
     @DeleteMapping("/{userId}")
@@ -51,11 +57,22 @@ class UserController(private val userService: UserService) {
     ): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val user = userService.findUserById(userId) ?: throw ApiException(404, "User nie istnieje")
-        if (userId != authUser.id) throw ApiException(404, "Nie masz dostępu do tego usera")
+        val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
 
+        commentService.deleteCommentsByUserId(userId)
+        taskService.deleteTasksByUserId(userId)
+        projectService.deleteProjectsByUserId(userId)
         userService.delete(user)
-        return ResponseEntity.ok("Pomyślnie usunięto usera")
+        return ResponseEntity.ok("Pomyślnie usunięto użytkownika")
+    }
+
+    private fun validateUserApiExceptionsAndIfValidatedReturnUser(
+        userId: String,
+        authUser: User
+    ): User {
+        val user = userService.findUserById(userId) ?: throw ApiException(404, "Użytkownik nie istnieje")
+        if (userId != authUser.id) throw ApiException(404, "Nie masz dostępu do tego użytkownika")
+        return user
     }
 
 }

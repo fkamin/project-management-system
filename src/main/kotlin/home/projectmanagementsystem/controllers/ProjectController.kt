@@ -3,13 +3,12 @@ package home.projectmanagementsystem.controllers
 import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.Project
+import home.projectmanagementsystem.models.User
 import home.projectmanagementsystem.services.ProjectService
 import home.projectmanagementsystem.services.TaskService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-
-// TODO dorobic usuwanie z bazy (moze kaskadowe) komentarzy w przypadku usuwania projektu lub projektow
 
 @RestController
 @RequestMapping("/api/projects")
@@ -17,11 +16,30 @@ class ProjectController(
     private val projectService: ProjectService,
     private val taskService: TaskService) {
 
-    @GetMapping("/{projectId}")
-    fun getProject(authentication: Authentication, @PathVariable projectId: String): ProjectDto {
+    @PostMapping
+    fun addProject(
+        authentication: Authentication,
+        @RequestBody payload: CreateProjectDto): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectByIdAndUserId(projectId, authUser.id) ?: throw ApiException(404, "Projekt nie znaleziony")
+        val project = Project(
+            createdBy = authUser.id,
+            title = payload.title,
+            description = payload.description,
+            state = payload.state,
+        )
+
+        projectService.save(project)
+        return ResponseEntity.ok("Pomyślnie utworzono projekt '${payload.title}'")
+    }
+
+    @GetMapping("/{projectId}")
+    fun getProject(
+        authentication: Authentication,
+        @PathVariable projectId: String): ProjectDto {
+        val authUser = authentication.toUser()
+
+        val project = validateProjectApiExceptionsAndIfValidatedReturnProject(projectId, authUser)
 
         return project.toDto()
     }
@@ -33,55 +51,35 @@ class ProjectController(
         return projectService.findProjectsByUserId(authUser.id).map { project -> project.toDto() }
     }
 
-    @PostMapping
-    fun addProject(authentication: Authentication, @RequestBody payload: CreateProjectDto): ResponseEntity<String> {
-        val authUser = authentication.toUser()
-
-        val project = Project(
-            title = payload.title,
-            description = payload.description,
-            state = payload.state,
-            startDate = payload.startDate,
-            endDate = payload.endDate,
-            taskList = payload.taskList,
-            userId = authUser.id
-        )
-
-        projectService.save(project)
-        return ResponseEntity.ok("Pomyślnie utworzono projekt: ${project.title}")
-    }
-
     @PutMapping("/{projectId}")
     fun updateProject(
         authentication: Authentication,
-        @RequestBody payload: UpdateProjectDto,
-        @PathVariable projectId: String): ResponseEntity<String> {
-
+        @PathVariable projectId: String,
+        @RequestBody payload: UpdateProjectDto): ResponseEntity<String> {
         val authUser = authentication.toUser()
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (authUser.id != project.userId) throw ApiException(403, "To nie jest twój projekt")
+
+        val project = validateProjectApiExceptionsAndIfValidatedReturnProject(projectId, authUser)
 
         project.title = payload.title
         project.description = payload.description
         project.state = payload.state
-        project.startDate = payload.startDate
-        project.endDate = payload.endDate
 
         projectService.save(project)
-        return ResponseEntity.ok("Projekt pomyślnie zaktualizowano")
+        return ResponseEntity.ok("Pomyślnie zaktualizowano projekt '${payload.title}'")
     }
 
     @DeleteMapping("/{projectId}")
-    fun deleteProject(authentication: Authentication, @PathVariable projectId: String ): ResponseEntity<String> {
+    fun deleteProject(
+        authentication: Authentication,
+        @PathVariable projectId: String ): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (authUser.id != project.userId) throw ApiException(403, "To nie jest twój projekt")
+        val project = validateProjectApiExceptionsAndIfValidatedReturnProject(projectId, authUser)
+        val projectName = project.title
 
         taskService.deleteTasksFromProject(projectId)
         projectService.delete(project)
-
-        return ResponseEntity.ok("Pomyślnie usunięto projekt")
+        return ResponseEntity.ok("Pomyślnie usunięto projekt '$projectName'")
     }
 
     @DeleteMapping
@@ -92,7 +90,12 @@ class ProjectController(
 
         taskService.deleteTasksFromProjects(projects)
         projectService.deleteProjectsByUserId(authUser.id)
+        return ResponseEntity.ok("Pomyślnie usunięto projekty")
+    }
 
-        return ResponseEntity.ok("Pomyślnie usunięto projekt")
+    private fun validateProjectApiExceptionsAndIfValidatedReturnProject(projectId: String, authUser: User): Project {
+        val project = projectService.findProjectByIdAndUserId(projectId, authUser.id) ?: throw ApiException(404, "Szukany projekt nie istnieje")
+        if (authUser.id != project.createdBy) throw ApiException(403, "To nie jest twój projekt")
+        return project
     }
 }

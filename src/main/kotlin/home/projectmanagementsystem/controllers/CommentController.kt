@@ -3,6 +3,7 @@ package home.projectmanagementsystem.controllers
 import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.Comment
+import home.projectmanagementsystem.models.User
 import home.projectmanagementsystem.services.CommentService
 import home.projectmanagementsystem.services.ProjectService
 import home.projectmanagementsystem.services.TaskService
@@ -16,24 +17,17 @@ class CommentController(
     private val commentService: CommentService,
     private val taskService: TaskService,
     private val projectService: ProjectService) {
-
     @GetMapping("/{projectId}/tasks/{taskId}/comments/{commentId}")
     fun getCommentFromTask(
         authentication: Authentication,
         @PathVariable projectId: String,
         @PathVariable taskId: String,
         @PathVariable commentId: String): CommentDto {
-
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
-
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
-        if (!project.taskList.contains(task.id)) throw ApiException(403, "To nie twój task")
-
-        val comment = commentService.findCommentByIdAndTaskId(commentId, taskId) ?: throw ApiException(404, "Komentarz nie istnieje")
-        if (!task.comments.contains(comment.id)) throw ApiException(403, "To nie twój komentarz")
+        validateProjectApiExceptions(projectId, authUser)
+        validateTaskApiExceptions(taskId, projectId)
+        val comment = validateCommentApiExceptionsAndIfValidatedReturnComment(commentId, taskId)
 
         return comment.toDto()
     }
@@ -43,14 +37,10 @@ class CommentController(
         authentication: Authentication,
         @PathVariable projectId: String,
         @PathVariable taskId: String): List<CommentDto> {
-
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
-
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
-        if (!project.taskList.contains(task.id)) throw ApiException(403, "To nie twój task")
+        validateProjectApiExceptions(projectId, authUser)
+        validateTaskApiExceptions(taskId, projectId)
 
         return commentService.findCommentsByTaskId(taskId).map { comment -> comment.toDto() }
     }
@@ -62,20 +52,17 @@ class CommentController(
         @PathVariable taskId: String,
         @RequestBody payload: CreateCommentDto
     ): ResponseEntity<String> {
-
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
-
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
-        if (!project.taskList.contains(task.id)) throw ApiException(403, "To nie twój task")
+        validateProjectApiExceptions(projectId, authUser)
+        validateTaskApiExceptions(taskId, projectId)
 
         val comment = Comment(
-            description = payload.description,
-            author = authUser.id,
-            taskId = taskId,
-            date = payload.date
+            taskId = payload.taskId,
+            createdBy = authUser.id,
+            createdAt = payload.createdAt,
+            content = payload.content,
+            wasEdited = false
         )
 
         commentService.save(comment)
@@ -90,25 +77,30 @@ class CommentController(
         @PathVariable commentId: String,
         @RequestBody payload: UpdateCommentDto
     ): ResponseEntity<String> {
-
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
+        validateProjectApiExceptions(projectId, authUser)
+        validateTaskApiExceptions(taskId, projectId)
+        val comment = validateCommentApiExceptionsAndIfValidatedReturnComment(commentId, taskId)
 
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
-        if (!project.taskList.contains(task.id)) throw ApiException(403, "To nie twój task")
-
-        val comment = commentService.findCommentByIdAndTaskId(commentId, taskId) ?: throw ApiException(404, "Komentarz nie istnieje")
-        if (!task.comments.contains(comment.id)) throw ApiException(403, "To nie twój komentarz")
-
-        comment.description = payload.description
-        comment.date = payload.date
+        comment.content = payload.content
         comment.wasEdited = true
 
         commentService.save(comment)
-        taskService.updateCommentInTask(comment.taskId, commentId, comment.id.toString())
         return ResponseEntity.ok("Pomyślnie dodano komentarz")
     }
-
+    
+    private fun validateProjectApiExceptions(projectId: String, authUser: User) {
+        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
+        if (project.createdBy != authUser.id) throw ApiException(403, "To nie jest twój projekt")
+    }
+    private fun validateTaskApiExceptions(taskId: String, projectId: String) {
+        val task =  taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Zadanie nie istnieje")
+        if (task.id != taskId) throw ApiException(403, "To nie jest twój task")
+    }
+    private fun validateCommentApiExceptionsAndIfValidatedReturnComment(commentId: String, taskId: String): Comment{
+        val comment = commentService.findCommentByIdAndTaskId(commentId, taskId) ?: throw ApiException(404, "Komentarz nie istnieje")
+        if (comment.id != commentId) throw ApiException(403, "To nie jest twój komentarz")
+        return comment
+    }
 }

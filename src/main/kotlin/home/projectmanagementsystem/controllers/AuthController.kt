@@ -24,20 +24,14 @@ class AuthController(
     fun login(@RequestBody payload: LoginDto): LoginResponseDto {
         val user = userService.findByEmail(payload.email) ?: throw ApiException(400, "Błąd podczas logowania")
 
-        if (!hashService.checkBcrypt(payload.password, user.password)) {
-            throw ApiException(400, "Błąd podczas logowania")
-        }
+        if (!hashService.checkBcrypt(payload.password, user.password)) throw ApiException(400, "Błąd podczas logowania")
 
-        return LoginResponseDto(
-            token = tokenService.createToken(user)
-        )
+        return LoginResponseDto(token = tokenService.createToken(user))
     }
 
     @PostMapping("/register")
     fun register(@RequestBody payload: RegisterDto): LoginResponseDto {
-        if (userService.existsByEmail(payload.email)) {
-            throw ApiException(400, "Email już istnieje")
-        }
+        if (userService.existsByEmail(payload.email)) throw ApiException(400, "Email już istnieje")
 
         val user = User(
             firstName = payload.firstName,
@@ -48,8 +42,6 @@ class AuthController(
 
         val savedUser = userService.save(user)
 
-        return LoginResponseDto(
-            token = tokenService.createToken(savedUser)
-        )
+        return LoginResponseDto(token = tokenService.createToken(savedUser))
     }
 }

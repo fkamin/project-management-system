@@ -3,13 +3,12 @@ package home.projectmanagementsystem.controllers
 import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.Task
+import home.projectmanagementsystem.models.User
 import home.projectmanagementsystem.services.ProjectService
 import home.projectmanagementsystem.services.TaskService
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-
-// TODO dorobic usuwanie z bazy (moze kaskadowe) komentarzy w przypadku usuwania taska lub taskow
 
 @RestController
 @RequestMapping("/api/projects")
@@ -18,22 +17,25 @@ class TaskController(
     private val projectService: ProjectService) {
 
     @GetMapping("/{projectId}/tasks/{taskId}")
-    fun getTaskFromProject(authentication: Authentication, @PathVariable projectId: String, @PathVariable taskId: String): TaskDto {
+    fun getTaskFromProject(
+        authentication: Authentication,
+        @PathVariable projectId: String,
+        @PathVariable taskId: String): TaskDto {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
+        validateProjectApiExceptions(projectId, authUser)
 
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
+        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Zadanie nie istnieje")
         return task.toDto()
     }
 
     @GetMapping("/{projectId}/tasks")
-    fun getTasksFromProject(authentication: Authentication, @PathVariable projectId: String): List<TaskDto> {
+    fun getTasksFromProject(
+        authentication: Authentication,
+        @PathVariable projectId: String): List<TaskDto> {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
+        validateProjectApiExceptions(projectId, authUser)
 
         return taskService.findTasksByProjectId(projectId).map { task -> task.toDto() }
     }
@@ -41,48 +43,43 @@ class TaskController(
     @PostMapping("/{projectId}/tasks")
     fun createAndAddTaskToProject(
         authentication: Authentication,
-        @RequestBody payload: CreateTaskDto,
-        @PathVariable projectId: String): ResponseEntity<String> {
+        @PathVariable projectId: String,
+        @RequestBody payload: CreateTaskDto): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (project.userId != authUser.id) throw ApiException(403, "To nie twój projekt")
+        validateProjectApiExceptions(projectId, authUser)
 
         val task = Task(
+            projectId = projectId,
+            createdBy = authUser.id,
+            listOfCategories = payload.listOfCategories,
             title = payload.title,
             description = payload.description,
-            deadline = payload.deadline,
             state = payload.state,
-            categories = payload.categories,
-            projectId = projectId
         )
 
-        taskService.addTaskToProject(projectId, task)
-        return ResponseEntity.ok("Pomyślnie dodano taska: ${task.title}, do projektu: ${project.title}")
+        taskService.save(task)
+        return ResponseEntity.ok("Pomyślnie dodano zadanie '${payload.title}' do projektu")
     }
 
     @PutMapping("/{projectId}/tasks/{taskId}")
     fun updateTaskInProject(
         authentication: Authentication,
-        @RequestBody payload: UpdateTaskDto,
         @PathVariable projectId: String,
-        @PathVariable taskId: String): ResponseEntity<String> {
+        @PathVariable taskId: String,
+        @RequestBody payload: UpdateTaskDto): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie znaleziony")
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (authUser.id != project.userId) throw ApiException(403, "To nie jest twój task")
+        validateProjectApiExceptions(projectId, authUser)
 
+        val task = validateTaskApiExceptionsAndIfValidatedReturnTask(taskId, projectId)
+        task.listOfCategories = payload.listOfCategories
         task.title = payload.title
         task.description = payload.description
-        task.deadline = payload.deadline
         task.state = payload.state
-        task.categories = payload.categories
 
         taskService.save(task)
-        projectService.updateTaskInProject(task.projectId, taskId, task.id.toString())
-
-        return ResponseEntity.ok("Pomyślnie zaktualizowano taska")
+        return ResponseEntity.ok("Pomyślnie zaktualizowano zadanie '${payload.title}'")
     }
 
     @DeleteMapping("/{projectId}/tasks/{taskId}")
@@ -92,25 +89,41 @@ class TaskController(
         @PathVariable taskId: String): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val task = taskService.findTaskById(taskId) ?: throw ApiException(404, "Task nie znaleziony")
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (authUser.id != project.userId) throw ApiException(403, "To nie jest twój task")
+        validateProjectApiExceptions(projectId, authUser)
+
+        val task = validateTaskApiExceptionsAndIfValidatedReturnTask(taskId, projectId)
+        val taskName = task.title
 
         taskService.delete(task)
-        projectService.deleteTaskFromProject(projectId, taskId)
-
-        return ResponseEntity.ok("Pomyślnie usunięto taska")
+        return ResponseEntity.ok("Pomyślnie usunięto zadanie '$taskName'")
     }
 
     @DeleteMapping("/{projectId}/tasks")
-    fun deleteTasksFromProject(authentication: Authentication, @PathVariable projectId: String): ResponseEntity<String> {
+    fun deleteTasksFromProject(
+        authentication: Authentication,
+        @PathVariable projectId: String): ResponseEntity<String> {
         val authUser = authentication.toUser()
 
-        val project = projectService.findProjectById(projectId) ?: throw ApiException(404, "Projekt nie istnieje")
-        if (authUser.id != project.userId) throw ApiException(403, "To nie jest twój task")
+        validateProjectApiExceptions(projectId, authUser)
 
         taskService.deleteTasksFromProject(projectId)
-        projectService.deleteTasksFromProject(projectId)
-        return ResponseEntity.ok("Pomyślnie usunięto wszystkie taski")
+        return ResponseEntity.ok("Pomyślnie usunięto wszystkie zadania")
+    }
+
+    private fun validateProjectApiExceptions(
+        projectId: String,
+        authUser: User
+    ) {
+        val project = projectService.findProjectByIdAndUserId(projectId, authUser.id) ?: throw ApiException(404, "Szukany projekt nie istnieje")
+        if (authUser.id != project.createdBy) throw ApiException(403, "To nie jest twój projekt")
+    }
+
+    private fun validateTaskApiExceptionsAndIfValidatedReturnTask(
+        taskId: String,
+        projectId: String,
+    ): Task {
+        val task = taskService.findTaskByIdAndProjectId(taskId, projectId) ?: throw ApiException(404, "Task nie istnieje")
+        if (task.projectId != projectId) throw ApiException(403, "To nie twój task")
+        return task
     }
 }

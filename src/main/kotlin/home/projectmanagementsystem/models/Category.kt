@@ -7,6 +7,5 @@ import org.springframework.data.mongodb.core.mapping.Document
 data class Category(
     @Id
     var id: String? = null,
-    var name: String = "",
-    var description: String = ""
+    var name: String = ""
 )

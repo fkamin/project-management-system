@@ -8,9 +8,9 @@ import java.util.Date
 data class Comment(
     @Id
     var id: String? = null,
-    var description: String = "",
-    var author: String? = null,
-    var taskId: String = "",
-    var date: Date = Date(),
+    var taskId: String? = null,
+    var createdBy: String? = null,
+    var createdAt: Date = Date(),
+    var content: String = "",
     var wasEdited: Boolean = false
 )
