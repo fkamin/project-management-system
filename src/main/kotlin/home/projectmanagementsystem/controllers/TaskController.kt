@@ -6,12 +6,14 @@ import home.projectmanagementsystem.models.Task
 import home.projectmanagementsystem.models.User
 import home.projectmanagementsystem.services.ProjectService
 import home.projectmanagementsystem.services.TaskService
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/projects")
+@SecurityRequirement(name = "Bearer Authentication")
 class TaskController(
     private val taskService: TaskService,
     private val projectService: ProjectService) {
