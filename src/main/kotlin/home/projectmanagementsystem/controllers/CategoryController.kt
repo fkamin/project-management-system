@@ -3,11 +3,13 @@ package home.projectmanagementsystem.controllers
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.Category
 import home.projectmanagementsystem.services.CategoryService
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/categories")
+@SecurityRequirement(name = "Bearer Authentication")
 class CategoryController(private val categoryService: CategoryService) {
     @GetMapping
     fun getAllCategories(): List<CategoryDto> = categoryService.getAllCategories().map { category -> category.toDto() }

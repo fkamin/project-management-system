@@ -7,6 +7,7 @@ import home.projectmanagementsystem.services.CommentService
 import home.projectmanagementsystem.services.ProjectService
 import home.projectmanagementsystem.services.TaskService
 import home.projectmanagementsystem.services.UserService
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/users")
+@SecurityRequirement(name = "Bearer Authentication")
 class UserController(
     private val userService: UserService,
     private val projectService: ProjectService,

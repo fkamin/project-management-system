@@ -19,18 +19,37 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val tokenService: TokenService
+        private val tokenService: TokenService
 ) {
+    private val AUTH_WHITELIST = arrayOf(
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui.html",
+            "/webjars/**",
+            "/v3/api-docs/**",
+            "/api/public/**",
+            "/api/public/authenticate",
+            "/actuator/*",
+            "/swagger-ui/**"
+    )
+
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        http.authorizeHttpRequests()
-            .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/register").permitAll()
-            .requestMatchers("/api/**").authenticated()
-            .anyRequest().permitAll()
+        http.authorizeHttpRequests { authorize ->
+
+            AUTH_WHITELIST.forEach { path ->
+                authorize.requestMatchers(path).permitAll()
+            }
+            authorize.requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+            authorize.requestMatchers(HttpMethod.POST, "/api/register").permitAll()
+            authorize.requestMatchers("/api/**").authenticated()
+            authorize.anyRequest().permitAll()
+        };
 
         http.oauth2ResourceServer().jwt()
-        http.authenticationManager {auth ->
+        http.authenticationManager { auth ->
             val jwt = auth as BearerTokenAuthenticationToken
             val user = tokenService.parseToken(jwt.token) ?: throw InvalidBearerTokenException("Błędny token")
             UsernamePasswordAuthenticationToken(user, "", listOf(SimpleGrantedAuthority("USER")))

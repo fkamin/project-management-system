@@ -7,10 +7,12 @@ import home.projectmanagementsystem.dtos.toDto
 import home.projectmanagementsystem.services.CategoryService
 import home.projectmanagementsystem.services.TaskService
 import home.projectmanagementsystem.services.UserService
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/admin")
+@SecurityRequirement(name = "Bearer Authentication")
 class AdminController(
     private val taskService: TaskService,
     private val categoryService: CategoryService,
