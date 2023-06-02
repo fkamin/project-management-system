@@ -1,4 +1,4 @@
-# System zarządzania projektami --- server
+# Project management system -> server
 
 ## To see OpenAPI docs
 
