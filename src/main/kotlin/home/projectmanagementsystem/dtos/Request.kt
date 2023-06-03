@@ -16,6 +16,10 @@ data class UpdateUserDto(
     val lastName: String,
     val email: String
 )
+data class UpdateUserPasswordDto(
+    val currentPassword: String,
+    val newPassword: String
+)
 data class CreateProjectDto(
     val title: String,
     val description: String,

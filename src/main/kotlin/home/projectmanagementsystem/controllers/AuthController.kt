@@ -22,9 +22,9 @@ class AuthController(
 ) {
     @PostMapping("/login")
     fun login(@RequestBody payload: LoginDto): LoginResponseDto {
-        val user = userService.findByEmail(payload.email) ?: throw ApiException(400, "Błąd podczas logowania")
+        val user = userService.findByEmail(payload.email) ?: throw ApiException(401, "Błąd podczas logowania")
 
-        if (!hashService.checkBcrypt(payload.password, user.password)) throw ApiException(400, "Błąd podczas logowania")
+        if (!hashService.checkBcrypt(payload.password, user.password)) throw ApiException(401, "Błąd podczas logowania")
 
         return LoginResponseDto(token = tokenService.createToken(user))
     }

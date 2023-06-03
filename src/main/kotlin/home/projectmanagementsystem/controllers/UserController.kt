@@ -3,10 +3,7 @@ package home.projectmanagementsystem.controllers
 import home.projectmanagementsystem.configs.toUser
 import home.projectmanagementsystem.dtos.*
 import home.projectmanagementsystem.models.User
-import home.projectmanagementsystem.services.CommentService
-import home.projectmanagementsystem.services.ProjectService
-import home.projectmanagementsystem.services.TaskService
-import home.projectmanagementsystem.services.UserService
+import home.projectmanagementsystem.services.*
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
@@ -21,7 +18,8 @@ class UserController(
     private val userService: UserService,
     private val projectService: ProjectService,
     private val taskService: TaskService,
-    private val commentService: CommentService) {
+    private val commentService: CommentService,
+    private val hashService: HashService) {
 
     @GetMapping("/{userId}")
     fun getUser(authentication: Authentication, @PathVariable userId: String): UserDto {
@@ -32,7 +30,7 @@ class UserController(
         return user.toDto()
     }
 
-    @PutMapping("/{userId}")
+    @PutMapping("/{userId}/change-data")
     fun updateUser(
         authentication: Authentication,
         @PathVariable userId: String,
@@ -42,7 +40,7 @@ class UserController(
 
         val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
 
-        if (userService.existsByEmail(payload.email)) throw ApiException(400, "Email jest zajęty")
+        if (userService.existsByEmail(payload.email) && authUser.email != payload.email) throw ApiException(400, "Email jest zajęty")
 
         user.firstName = payload.firstName
         user.lastName = payload.lastName
@@ -50,6 +48,25 @@ class UserController(
 
         userService.save(user)
         return ResponseEntity.ok("Pomyślnie zaktualizowano użytkownika")
+    }
+
+    @PutMapping("/{userId}/change-password")
+    fun updateUserPassword(
+        authentication: Authentication,
+        @PathVariable userId: String,
+        @RequestBody payload: UpdateUserPasswordDto
+    ): ResponseEntity<String> {
+        val authUser = authentication.toUser()
+
+        val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
+
+        if (!hashService.checkBcrypt(payload.currentPassword, authUser.password) ||
+            hashService.checkBcrypt(payload.newPassword, authUser.password)) throw ApiException(404, "Błąd podczas zmiany hasła")
+
+        user.password = hashService.hashBcrypt(payload.newPassword)
+
+        userService.save(user)
+        return ResponseEntity.ok("Pomyślnie zaktualizowano hasło")
     }
 
     @DeleteMapping("/{userId}")
