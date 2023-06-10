@@ -9,8 +9,6 @@ data class Task(
     var id: String? = null,
     var projectId: String? = null,
     var createdBy: String? = null,
-    var listOfCategories: MutableList<String>? = null,
     var title: String = "",
-    var description: String = "",
-    var state: String = ""
+    var isCompleted: Boolean = false
 )

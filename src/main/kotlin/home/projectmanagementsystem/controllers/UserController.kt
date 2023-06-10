@@ -18,7 +18,6 @@ class UserController(
     private val userService: UserService,
     private val projectService: ProjectService,
     private val taskService: TaskService,
-    private val commentService: CommentService,
     private val hashService: HashService) {
 
     @GetMapping("/{userId}")
@@ -78,7 +77,6 @@ class UserController(
 
         val user = validateUserApiExceptionsAndIfValidatedReturnUser(userId, authUser)
 
-        commentService.deleteCommentsByUserId(userId)
         taskService.deleteTasksByUserId(userId)
         projectService.deleteProjectsByUserId(userId)
         userService.delete(user)

@@ -54,10 +54,7 @@ class TaskController(
         val task = Task(
             projectId = projectId,
             createdBy = authUser.id,
-            listOfCategories = payload.listOfCategories,
-            title = payload.title,
-            description = payload.description,
-            state = payload.state,
+            title = payload.title
         )
 
         taskService.save(task)
@@ -75,10 +72,8 @@ class TaskController(
         validateProjectApiExceptions(projectId, authUser)
 
         val task = validateTaskApiExceptionsAndIfValidatedReturnTask(taskId, projectId)
-        task.listOfCategories = payload.listOfCategories
         task.title = payload.title
-        task.description = payload.description
-        task.state = payload.state
+        task.isCompleted = payload.isCompleted
 
         taskService.save(task)
         return ResponseEntity.ok("Pomyślnie zaktualizowano zadanie '${payload.title}'")

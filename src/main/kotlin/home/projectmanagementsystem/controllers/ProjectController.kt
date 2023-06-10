@@ -27,8 +27,7 @@ class ProjectController(
         val project = Project(
             createdBy = authUser.id,
             title = payload.title,
-            description = payload.description,
-            state = payload.state,
+            description = payload.description
         )
 
         projectService.save(project)
@@ -64,7 +63,6 @@ class ProjectController(
 
         project.title = payload.title
         project.description = payload.description
-        project.state = payload.state
 
         projectService.save(project)
         return ResponseEntity.ok("Pomyślnie zaktualizowano projekt '${payload.title}'")

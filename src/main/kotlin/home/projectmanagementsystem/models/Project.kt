@@ -9,6 +9,5 @@ data class Project(
     var id: String? = null,
     var createdBy: String? = null,
     var title: String = "",
-    var description: String = "",
-    var state: String = ""
+    var description: String = ""
 )
